@@ -22,27 +22,40 @@ jobs:
         with:
           python-version: 3.11
 
-      # 3️⃣ Install Python dependencies (bỏ pywin32)
+      # 3️⃣ Install Python dependencies (bỏ pywin32 trên Linux)
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          # cài tất cả packages, pip sẽ bỏ qua pywin32 trên Linux
-          pip install --upgrade -r requirements.txt
+          # Bỏ pywin32 nếu có trên Linux
+          if [[ "$(uname)" == "Linux" ]]; then
+            pip install $(grep -v "pywin32" requirements.txt)
+          else
+            pip install -r requirements.txt
+          fi
 
       # 4️⃣ Setup Node.js + Newman
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
+
       - name: Install Newman + HTML reporter
         run: npm install -g newman newman-reporter-html
 
-      # 5️⃣ Start FastAPI server
+      # 5️⃣ Start FastAPI server in background
       - name: Start FastAPI server
         run: |
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
           echo "Waiting for server to start..."
-          sleep 5
+          # kiểm tra server đã sẵn sàng trước khi chạy test
+          for i in {1..10}; do
+            if curl -s http://127.0.0.1:8000/docs > /dev/null; then
+              echo "Server is up!"
+              break
+            else
+              sleep 2
+            fi
+          done
 
       # 6️⃣ Debug: list files
       - name: List project files
