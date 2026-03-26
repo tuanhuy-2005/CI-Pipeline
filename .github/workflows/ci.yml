@@ -26,9 +26,8 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          # Bỏ pywin32 nếu có trên Linux
           if [[ "$(uname)" == "Linux" ]]; then
-            pip install $(grep -v "pywin32" requirements.txt)
+            python -m pip install $(python -c "import sys; print(' '.join([line.strip() for line in open('requirements.txt') if line.strip() and 'pywin32' not in line]))")
           else
             pip install -r requirements.txt
           fi
@@ -42,20 +41,12 @@ jobs:
       - name: Install Newman + HTML reporter
         run: npm install -g newman newman-reporter-html
 
-      # 5️⃣ Start FastAPI server in background
+      # 5️⃣ Start FastAPI server
       - name: Start FastAPI server
         run: |
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
           echo "Waiting for server to start..."
-          # kiểm tra server đã sẵn sàng trước khi chạy test
-          for i in {1..10}; do
-            if curl -s http://127.0.0.1:8000/docs > /dev/null; then
-              echo "Server is up!"
-              break
-            else
-              sleep 2
-            fi
-          done
+          sleep 5
 
       # 6️⃣ Debug: list files
       - name: List project files
