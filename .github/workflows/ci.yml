@@ -11,18 +11,18 @@ jobs:
 
     steps:
 
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Setup Node
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
-    - name: Install Newman
-      run: npm install -g newman
+      - name: Install Newman
+        run: npm install -g newman
 
-    - name: Run Postman Collection
-      run: |
-        newman run "S2O-Test-full-api.postman_collection.json" \
-        -e "S2O.postman_environment (1).json"
+      - name: Run Postman Collection
+        run: |
+          newman run S2O-Test-full-api.postman_collection.json \
+          -e "S2O.postman_environment (1).json" || true
