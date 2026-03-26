@@ -34,4 +34,5 @@ jobs:
       - name: Run Postman Collection
         run: |
           newman run S2O-Test-full-api.postman_collection.json \
-          -e "S2O.postman_environment (1).json" || true
+          -e "S2O.postman_environment (1).json" \
+          --reporters cli
