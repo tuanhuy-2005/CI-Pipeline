@@ -2,12 +2,9 @@ name: API CI Pipeline
 
 on:
   push:
-    branches:
-      - main
-
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   api-test:
@@ -15,23 +12,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
+      # 1. Checkout source code
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # 2. Setup Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
+      # 3. Install Newman + HTML reporter
       - name: Install Newman
-        run: npm install -g newman
+        run: |
+          npm install -g newman newman-reporter-html
 
+      # 4. Verify Newman (debug)
       - name: Verify Newman installation
         run: newman -v
 
-      - name: Run Postman API tests
+      # 5. Debug - kiểm tra file có tồn tại không
+      - name: List project files
+        run: ls -la
+
+      # 6. Run Postman collection (có log đầy đủ)
+      - name: Run API Tests
         run: |
-          newman run S2O-Test-full-api.postman_collection.json \
+          newman run "S2O-Test-full-api.postman_collection.json" \
           -e "S2O.postman_environment (1).json" \
-          --reporters cli
+          -r cli,html \
+          --reporter-html-export report.html \
+          --verbose
+
+      # 7. Upload report HTML (xem đẹp)
+      - name: Upload HTML report
+        if: always()   # 👉 kể cả fail vẫn upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-report
+          path: report.html
