@@ -27,7 +27,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [[ "$(uname)" == "Linux" ]]; then
-            python -m pip install $(python -c "import sys; print(' '.join([line.strip() for line in open('requirements.txt') if line.strip() and 'pywin32' not in line]))")
+            echo "Installing dependencies (excluding pywin32)..."
+            grep -v '^pywin32' requirements.txt | xargs -n 1 pip install
           else
             pip install -r requirements.txt
           fi
@@ -37,7 +38,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-
       - name: Install Newman + HTML reporter
         run: npm install -g newman newman-reporter-html
 
