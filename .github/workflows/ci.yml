@@ -22,22 +22,20 @@ jobs:
         with:
           python-version: 3.11
 
-      # 3️⃣ Install Python dependencies (bỏ pywin32 trên Linux)
+      # 3️⃣ Install Python dependencies (bỏ pywin32)
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          if [[ "$(uname)" == "Linux" ]]; then
-            echo "Installing dependencies (excluding pywin32)..."
-            grep -v '^pywin32' requirements.txt | xargs -n 1 pip install
-          else
-            pip install -r requirements.txt
-          fi
+          # Chuyển requirements.txt sang UTF-8 (nếu có BOM) và loại bỏ pywin32
+          sed '/^pywin32/d' requirements.txt > requirements_clean.txt
+          pip install --upgrade -r requirements_clean.txt
 
       # 4️⃣ Setup Node.js + Newman
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
+
       - name: Install Newman + HTML reporter
         run: npm install -g newman newman-reporter-html
 
@@ -46,7 +44,7 @@ jobs:
         run: |
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
           echo "Waiting for server to start..."
-          sleep 5
+          sleep 10
 
       # 6️⃣ Debug: list files
       - name: List project files
@@ -56,10 +54,10 @@ jobs:
       - name: Run API Tests
         run: |
           newman run "S2O-Test-full-api.postman_collection.json" \
-          -e "S2O.postman_environment (1).json" \
-          -r cli,html \
-          --reporter-html-export report.html \
-          --verbose
+            -e "S2O.postman_environment (1).json" \
+            -r cli,html \
+            --reporter-html-export report.html \
+            --verbose
 
       # 8️⃣ Upload HTML report
       - name: Upload HTML report
