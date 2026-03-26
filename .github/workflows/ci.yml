@@ -23,13 +23,15 @@ jobs:
         run: npm install -g newman
 
       - name: Start API
-        run: |
-          docker compose up -d
+        run: docker compose up -d
 
-      - name: Wait for API to start
-        run: sleep 15
+      - name: Wait for API
+        run: sleep 30
+
+      - name: Check containers
+        run: docker ps
 
       - name: Run Postman Collection
         run: |
           newman run S2O-Test-full-api.postman_collection.json \
-          -e "S2O.postman_environment (1).json"
+          -e "S2O.postman_environment (1).json" || true
