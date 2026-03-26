@@ -24,22 +24,25 @@ jobs:
       # 3️⃣ Install Python dependencies
       - name: Install Python dependencies
         run: |
+          cd s2o-api
           python -m pip install --upgrade pip
-          pip install -r s2o-api/requirements.txt
+          pip install -r requirements.txt
 
-      # 4️⃣ Install Newman (Node.js) + reporter HTML
-      - name: Setup Node + Newman
+      # 4️⃣ Setup Node.js + Newman
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npm install -g newman newman-reporter-html
+      - name: Install Newman + HTML reporter
+        run: npm install -g newman newman-reporter-html
 
-      # 5️⃣ Start FastAPI server
+      # 5️⃣ Start FastAPI server in background
       - name: Start FastAPI server
         run: |
+          cd s2o-api
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
           echo "Waiting for server to start..."
-          sleep 5
+          sleep 5   # Chờ server khởi động
 
       # 6️⃣ Debug: list files
       - name: List project files
@@ -48,16 +51,17 @@ jobs:
       # 7️⃣ Run Newman tests
       - name: Run API Tests
         run: |
-          newman run "s2o-api/S2O-Test-full-api.postman_collection.json" \
-          -e "s2o-api/S2O.postman_environment (1).json" \
+          cd s2o-api
+          newman run "S2O-Test-full-api.postman_collection.json" \
+          -e "S2O.postman_environment (1).json" \
           -r cli,html \
           --reporter-html-export report.html \
           --verbose
 
-      # 8️⃣ Upload HTML report
+      # 8️⃣ Upload HTML report (luôn upload dù fail)
       - name: Upload HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: newman-report
-          path: report.html
+          path: s2o-api/report.html
