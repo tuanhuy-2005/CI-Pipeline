@@ -1,4 +1,4 @@
-name: API CI Pipeline
+name: API CI Pipeline (FastAPI)
 
 on:
   push:
@@ -8,54 +8,55 @@ on:
 
 jobs:
   api-test:
-    name: Run API Tests
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout source code
-      - name: Checkout source code
+      # 1️⃣ Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Setup Node.js (Node 24)
-      - name: Setup Node.js
+      # 2️⃣ Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      # 3️⃣ Install Python dependencies
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r s2o-api/requirements.txt
+
+      # 4️⃣ Install Newman (Node.js) + reporter HTML
+      - name: Setup Node + Newman
         uses: actions/setup-node@v4
         with:
           node-version: 24
+      - run: npm install -g newman newman-reporter-html
 
-      # 3. Install dependencies & Newman
-      - name: Install project dependencies
-        run: npm install
-
-      - name: Install Newman + HTML reporter
-        run: npm install -g newman newman-reporter-html
-
-      # 4. Start API server (local Node/Express example)
-      - name: Start API server
+      # 5️⃣ Start FastAPI server
+      - name: Start FastAPI server
         run: |
-          npm run start &   # chạy background
-          echo "Waiting for API to start..."
-          sleep 5           # chờ server khởi động
+          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          echo "Waiting for server to start..."
+          sleep 5
 
-      # 5. Verify Newman installation
-      - name: Verify Newman installation
-        run: newman -v
-
-      # 6. Debug - kiểm tra file có tồn tại không
+      # 6️⃣ Debug: list files
       - name: List project files
-        run: ls -la
+        run: ls -la s2o-api
 
-      # 7. Run Postman collection (có log đầy đủ)
+      # 7️⃣ Run Newman tests
       - name: Run API Tests
         run: |
-          newman run "S2O-Test-full-api.postman_collection.json" \
-          -e "S2O.postman_environment (1).json" \
+          newman run "s2o-api/S2O-Test-full-api.postman_collection.json" \
+          -e "s2o-api/S2O.postman_environment (1).json" \
           -r cli,html \
           --reporter-html-export report.html \
           --verbose
 
-      # 8. Upload report HTML (xem đẹp)
+      # 8️⃣ Upload HTML report
       - name: Upload HTML report
-        if: always()   # 👉 kể cả fail vẫn upload
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: newman-report
